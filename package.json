@@ -7,10 +7,12 @@
     "start": "node index.js",
     "dev": "nodemon index.js"
   },
-  "dependencies": {
-    "cors": "^2.8.5",
-    "express": "^4.21.2"
-  },
+ "dependencies": {
+  "express": "^4.21.2",
+  "body-parser": "^1.20.3",
+  "cors": "^2.8.5",
+  "dotenv": "^16.4.5"
+}
   "engines": { "node": ">=18" },
   "private": true
 }
