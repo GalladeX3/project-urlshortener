@@ -1,69 +1,78 @@
-// URL Shortener Microservice — FCC (fixed)
+// URL Shortener Microservice — FCC project
+// Implements:
+//  - POST /api/shorturl  { url } -> { original_url, short_url }
+//  - GET  /api/shorturl/:id       -> 302 redirect to original_url
+
 const express = require('express');
 const cors = require('cors');
+const dns = require('dns');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-
-// CORS: return 200 on preflight (FCC hint mentions legacy behavior)
 app.use(cors({ optionsSuccessStatus: 200 }));
+app.use(express.urlencoded({ extended: false })); // handle form-encoded bodies
+app.use(express.json()); // handle JSON bodies
+app.use(express.static('public'));
+app.get('/', (req, res) => res.sendFile(__dirname + '/views/index.html'));
 
-// parse both form and JSON bodies
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-
-// static + landing page
-app.use('/public', express.static(`${process.cwd()}/public`));
-app.get('/', (req, res) => res.sendFile(process.cwd() + '/views/index.html'));
-
-// optional sample endpoint
-app.get('/api/hello', (req, res) => res.json({ greeting: 'hello API' }));
-
-// --- In-memory store (OK for FCC tests) ---
-const originalToShort = new Map();
-const shortToOriginal = new Map();
+// In-memory store: id -> url  (and reverse to avoid duplicates)
 let nextId = 1;
+const idToUrl = new Map();
+const urlToId = new Map();
 
-function isValidHttpUrl(value) {
-  try {
-    const u = new URL(value);
-    if (!/^https?:$/.test(u.protocol)) return false;   // http or https only
-    if (!u.hostname || !u.hostname.includes('.')) return false; // looks like a domain
-    return true;
-  } catch {
-    return false;
-  }
+function isHttpOrHttps(u) {
+  return u.protocol === 'http:' || u.protocol === 'https:';
 }
 
-// POST -> create/return short code
+// POST /api/shorturl
 app.post('/api/shorturl', (req, res) => {
-  const input = (req.body && req.body.url) ? String(req.body.url).trim() : '';
+  const input = req.body.url;
 
-  if (!isValidHttpUrl(input)) {
+  // Basic syntax validation
+  let parsed;
+  try {
+    parsed = new URL(input);
+  } catch {
     return res.json({ error: 'invalid url' });
   }
 
-  if (originalToShort.has(input)) {
-    return res.json({ original_url: input, short_url: originalToShort.get(input) });
+  if (!isHttpOrHttps(parsed)) {
+    return res.json({ error: 'invalid url' });
   }
 
-  const id = nextId++;
-  originalToShort.set(input, id);
-  shortToOriginal.set(id, input);
+  // DNS lookup on hostname (as FCC hint suggests)
+  dns.lookup(parsed.hostname, (err) => {
+    if (err) {
+      return res.json({ error: 'invalid url' });
+    }
 
-  res.json({ original_url: input, short_url: id });
+    // Deduplicate: reuse an existing id for the same URL
+    if (urlToId.has(parsed.href)) {
+      const existingId = urlToId.get(parsed.href);
+      return res.json({ original_url: parsed.href, short_url: existingId });
+    }
+
+    const id = nextId++;
+    idToUrl.set(id, parsed.href);
+    urlToId.set(parsed.href, id);
+
+    res.json({ original_url: parsed.href, short_url: id });
+  });
 });
 
-// GET -> redirect to original
+// GET /api/shorturl/:id
 app.get('/api/shorturl/:id', (req, res) => {
   const id = Number(req.params.id);
-  const target = shortToOriginal.get(id);
-
-  if (!target) {
-    // Some users prefer 404 JSON; FCC doesn't test this path, but it's nice to have:
-    return res.status(404).json({ error: 'No short URL found for the given input' });
+  if (!Number.isInteger(id) || id < 1) {
+    return res.json({ error: 'No short URL found for the given input' });
   }
-  return res.redirect(target); // default 302 is fine for FCC
+
+  const url = idToUrl.get(id);
+  if (!url) {
+    return res.json({ error: 'No short URL found for the given input' });
+  }
+
+  return res.redirect(url);
 });
 
-app.listen(PORT, () => console.log(`URL Shortener listening on ${PORT}`));
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`URL Shortener running on ${PORT}`));
