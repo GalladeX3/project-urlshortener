@@ -1,18 +1,20 @@
 {
-  "name": "url-shortener-waldoxp",
+  "name": "project-urlshortener",
   "version": "1.0.0",
-  "description": "freeCodeCamp URL Shortener Microservice (WaldoXP)",
+  "description": "FCC URL Shortener Microservice",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js"
+    "start": "node index.js"
   },
- "dependencies": {
-  "express": "^4.21.2",
-  "body-parser": "^1.20.3",
-  "cors": "^2.8.5",
-  "dotenv": "^16.4.5"
+  "dependencies": {
+    "express": "^4.21.2",
+    "body-parser": "^1.20.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5"
+  },
+  "engines": {
+    "node": ">=18 <23"
+  },
+  "license": "MIT"
 }
-  "engines": { "node": ">=18" },
-  "private": true
-}
+
