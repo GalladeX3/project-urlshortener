@@ -1,2 +1,7 @@
-.env
 node_modules/
+.env
+.env*
+npm-debug.log*
+yarn-error.log*
+*.log
+.DS_Store
