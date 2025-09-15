@@ -1,3 +1,6 @@
-# URL Shortener Microservice
+# URL Shortener Microservice (WaldoXP)
 
-This is the boilerplate code for the URL Shortener Microservice project. Instructions for building your project can be found at https://www.freecodecamp.org/learn/back-end-development-and-apis/back-end-development-and-apis-projects/url-shortener-microservice.
+**Endpoints**
+- `POST /api/shorturl` with form field `url` → returns:
+```json
+{ "original_url": "https://example.com", "short_url": 1 }
